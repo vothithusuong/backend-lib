@@ -6,16 +6,17 @@ const fs = require('fs');
 
 //ADD FILE BOOK
 exports.addFileBook = async (req, res) => {
-  try {
+  // try {
     const count = await BookModel.count()
+    console.log("COUNT:" +count)
     const workbook = XLSX.readFile(req.file.path);
     const sheet_namelist = workbook.SheetNames;
     let x = 0;
-    const bookData = []
-    sheet_namelist.forEach(async element => {
+    const bookData = [];
+    for (let x = 0; x < sheet_namelist.length; x++) {
       const xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_namelist[x]]);
       for (let i = 0; i < xlData.length; i++) {
-        const cate = await CategoryModel.findOne({ name: xlData[i].Theloai })
+        const cate = await CategoryModel.findOne({ name: xlData[i].Theloai });
         bookData.push({
           name: xlData[i].Tensach,
           publicationdate: xlData[i].Namxuatban,
@@ -27,13 +28,11 @@ exports.addFileBook = async (req, res) => {
           translator: xlData[i].Tacgia,
           price: xlData[i].Dongia,
           categoryItems: [{ categoryId: cate._id }],
-          bookId: "BOOK-" + (count + i)
-        })
+          bookId: "BOOK-" + (count+ (i+1))
+        });
       }
-      await BookModel.insertMany(bookData)
-      x++;
-    });
-
+    }
+    await BookModel.insertMany(bookData)
     fs.unlink(req.file.path, (err) => {
       if (err) {
         res.status(200).json({ success: false, data: [], msg: "Lỗi hệ thống" })
@@ -42,9 +41,9 @@ exports.addFileBook = async (req, res) => {
       }
     })
     res.status(200).json({ success: true, msg: "Thêm đầu sách thành công" })
-  } catch (error) {
-    res.status(200).json({ success: false, data: [], msg: "Lỗi hệ thống" })
-  }
+  // } catch (error) {
+  //   res.status(200).json({ success: false, data: [], msg: "Lỗi hệ thống" })
+  // }
 }
 
 //EXPORT FILE
@@ -154,7 +153,6 @@ exports.createBook = async (req, res) => {
 
   try {
     if (req.userExists.isAdmin) {
-      console.log(newBook.name)
       if (!newBook.name
         || !newBook.publicationdate
         || !newBook.stock
